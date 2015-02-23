@@ -28,16 +28,16 @@ isSudokuGoal :: SudokuConfig -> Bool
 isSudokuGoal config = squaresAreGoal config && rowsAreGoal config && columnsAreGoal config
 
 rowsAreGoal :: SudokuConfig -> Bool
-rowsAreGoal config = sum (map sum (sudokuGridRows config)) == 9 * 9
+rowsAreGoal config = all id (map nonupleIsGoal (sudokuGridRows config))
 
 columnsAreGoal :: SudokuConfig -> Bool
-columnsAreGoal config = sum (map sum (sudokuGridColumns config)) == 9 * 9
+columnsAreGoal config = all id (map nonupleIsGoal (sudokuGridColumns config))
 
 squaresAreGoal :: SudokuConfig -> Bool
-squaresAreGoal config = False
+squaresAreGoal config = all id (map nonupleIsGoal (sudokuGridColumns config))
 
-setIsGoal :: [Int] -> Bool
-setIsGoal xs = sum xs == 45
+nonupleIsGoal :: [Int] -> Bool
+nonupleIsGoal xs = sum xs == 45
 
 sudokuSolve :: SudokuConfig -> (Maybe SudokuConfig)
 sudokuSolve _ = Nothing
