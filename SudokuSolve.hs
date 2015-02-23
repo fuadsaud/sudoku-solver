@@ -50,12 +50,6 @@ column config n | n <= 9 = (sudokuGridColumns config) !! n
 
 square :: SudokuConfig -> Int -> [Int]
 square config n | n <= 9 = (sudokuGridSquares config) !! n
--- square (SudokuConfig grid) n | n <= 9 = squareAt (point n)
---   where
---     squareAt (i, j) = [ grid !! (index (ii + offset i, jj + offset j)) | jj <- [0..2], ii <- [0..2] ]
---     offset idx = 3 * (idx `div` 3)
---     point index = (index - 9 * (index `div` 9), index `div` 9)
---     index (i, j) = i + j * 9
 
 partition :: Int -> [a] -> [[a]]
 partition 0 xs = []
