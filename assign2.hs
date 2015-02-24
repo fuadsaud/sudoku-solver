@@ -1,9 +1,5 @@
-module SudokuSolver where
-    import Solver
+import Problems
+import SudokuSolve
 
-data SudokuConfig = SudokuConfig grid deriving Eq
-
-sudokuConfigFromList :: [Int] -> SudokuConfig
-listFromSudokuConfig :: SudokuConfig -> [Int]
-
+main = print $ sudokuSolve (sudokuConfigFromList test)
 
