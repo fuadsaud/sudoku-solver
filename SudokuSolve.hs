@@ -2,7 +2,7 @@ module SudokuSolve where
 
 import Solver
 import Data.Char (intToDigit)
-import Data.List (nub,transpose,elemIndices)
+import Data.List (nub,transpose,elemIndex,elemIndices)
 
 data SudokuConfig = SudokuConfig [Int] deriving Eq
 
@@ -20,12 +20,12 @@ instance Config SudokuConfig where
 
 scs :: SudokuConfig ->  [SudokuConfig]
 scs (SudokuConfig grid) =
-  filter validConfig (
-    map SudokuConfig [
+  [ config | (valid, config) <- [
       let
         (ini, rest) = splitAt i grid
+        config = SudokuConfig (ini ++ (newValue:(tail rest)))
       in
-        ini ++ (newValue:(tail rest)) | i <- elemIndices 0 grid,  newValue <- [1..9] ])
+         (validIndex config i, config) | i <- elemIndices 0 grid,  newValue <- [1..9] ], valid ]
 
 sudokuConfigFromList :: [Integer] -> SudokuConfig
 sudokuConfigFromList grid = SudokuConfig (map fromIntegral grid)
@@ -37,7 +37,11 @@ sudokuSolve :: SudokuConfig -> (Maybe SudokuConfig)
 sudokuSolve config = solve isSudokuGoal config
 
 isSudokuGoal :: SudokuConfig -> Bool
-isSudokuGoal config = squaresStatisfy config && rowsSatisfy config && columnsSatisfy config
+isSudokuGoal config@(SudokuConfig grid) =
+    elemIndex 0 grid == Nothing &&
+      rowsSatisfy config &&
+      columnsSatisfy config &&
+      boxesSatisfy config
 
 rowsSatisfy :: SudokuConfig -> Bool
 rowsSatisfy config = and $ map nonupleIsGoal (allRows config)
@@ -45,20 +49,24 @@ rowsSatisfy config = and $ map nonupleIsGoal (allRows config)
 columnsSatisfy :: SudokuConfig -> Bool
 columnsSatisfy config = and $ map nonupleIsGoal (allColumns config)
 
-squaresStatisfy :: SudokuConfig -> Bool
-squaresStatisfy config = and $ map nonupleIsGoal (allColumns config)
+boxesSatisfy :: SudokuConfig -> Bool
+boxesSatisfy config = and $ map nonupleIsGoal (allBoxes config)
 
 nonupleIsGoal :: [Int] -> Bool
 nonupleIsGoal xs | length xs == 9 = sum xs == sum [1..9]
 
-validConfig :: SudokuConfig -> Bool
-validConfig config = and $ map validNonuple allNonuples
-  where
-    allNonuples = (allRows config) ++ (allColumns config) ++ (allSquares config)
+-- validConfig :: SudokuConfig -> Bool
+-- validConfig config = and $ map validNonuple allNonuples
+--   where
+--     allNonuples = (allRows config) ++ (allColumns config) ++ (allBoxes config)
 
 validIndex :: SudokuConfig -> Int -> Bool
-validIndex (SudokuConfig grid) index =
-    and $ map validNonuple [indexRow index, indexColumn index, indexSquare index]
+validIndex config index =
+    and $ map validNonuple [
+      indexRow config index,
+      indexColumn config index,
+      indexBox config index
+    ]
 
 validNonuple :: [Int] -> Bool
 validNonuple xs | length xs == 9 = length (nub nonBlankCells) == length nonBlankCells
@@ -66,13 +74,13 @@ validNonuple xs | length xs == 9 = length (nub nonBlankCells) == length nonBlank
     nonBlankCells = (filter (/= 0) xs)
 
 row :: SudokuConfig -> Int -> [Int]
-row (SudokuConfig grid) r | r >= 0 && n <= 9 = take 9 (drop (r * 9) grid)
+row (SudokuConfig grid) r | r >= 0 && r <= 9 = take 9 (drop (r * 9) grid)
 
 column :: SudokuConfig -> Int -> [Int]
 column config c | c >= 0 && c <= 9 = (allColumns config) !! c
 
-square :: SudokuConfig -> Int -> [Int]
-square config s | s >= 0  && s <= 9 = (allSquares config) !! s
+-- box :: SudokuConfig -> Int -> [Int]
+-- box config s | s >= 0  && s <= 9 = (allBoxes config) !! s
 
 indexRow ::SudokuConfig -> Int -> [Int]
 indexRow config i | i >= 0 && i < 9 * 9 = row config (i `div` 9)
@@ -80,8 +88,13 @@ indexRow config i | i >= 0 && i < 9 * 9 = row config (i `div` 9)
 indexColumn :: SudokuConfig -> Int -> [Int]
 indexColumn config i | i >= 0 && i <= 9 * 9 = column config (i `rem` 9)
 
-indexSquare :: SudokuConfig -> Int -> [Int]
-indexSquare config i | i >= 0 && i <= 9 * 9 = column config i
+indexBox :: SudokuConfig -> Int -> [Int]
+indexBox (SudokuConfig grid) i | i >= 0 && i <= 9 * 9 = boxAt (point i)
+  where
+    boxAt (i, j) = [ grid !! (index (ii + offset i, jj + offset j)) | jj <- [0..2], ii <- [0..2] ]
+    offset idx = 3 * (idx `div` 3)
+    point index = (index - 9 * (index `div` 9), index `div` 9)
+    index (i, j) = i + j * 9
 
 allRows :: SudokuConfig -> [[Int]]
 allRows (SudokuConfig grid) = partition 9 grid
@@ -89,12 +102,11 @@ allRows (SudokuConfig grid) = partition 9 grid
 allColumns :: SudokuConfig -> [[Int]]
 allColumns config = transpose $ allRows config
 
-allSquares :: SudokuConfig -> [[Int]]
-allSquares config =
+allBoxes :: SudokuConfig -> [[Int]]
+allBoxes config =
     map concat (concatMap (partition 3) (transpose (map (partition 3) (allRows config))))
 
 partition :: Int -> [a] -> [[a]]
 partition 0 xs = []
 partition n [] = []
 partition n xs = y:(partition n ys) where (y, ys) = splitAt n xs
-
