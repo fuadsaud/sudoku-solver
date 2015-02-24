@@ -3,6 +3,8 @@ module SudokuSolve where
 import Solver
 import Data.Char (intToDigit)
 import Data.List (nub,transpose,elemIndex,elemIndices)
+import Data.Set (Set)
+import qualified Data.Set as Set
 
 data SudokuConfig = SudokuConfig [Int] deriving Eq
 
@@ -19,13 +21,15 @@ instance Config SudokuConfig where
     successors = scs
 
 scs :: SudokuConfig ->  [SudokuConfig]
-scs (SudokuConfig grid) =
-  [ config | (valid, config) <- [
-      let
-        (ini, rest) = splitAt i grid
-        config = SudokuConfig (ini ++ (newValue:(tail rest)))
-      in
-         (validIndex config i, config) | i <- elemIndices 0 grid,  newValue <- [1..9] ], valid ]
+scs config@(SudokuConfig grid) =
+  [
+    let
+      (ini, rest) = splitAt i grid
+      newConfig = SudokuConfig (ini ++ (newValue:(tail rest)))
+    in
+      newConfig | i <- blankIndices,  newValue <- validValuesForCell config i ]
+    where
+      blankIndices = elemIndices 0 grid
 
 sudokuConfigFromList :: [Integer] -> SudokuConfig
 sudokuConfigFromList grid = SudokuConfig (map fromIntegral grid)
@@ -38,10 +42,12 @@ sudokuSolve config = solve isSudokuGoal config
 
 isSudokuGoal :: SudokuConfig -> Bool
 isSudokuGoal config@(SudokuConfig grid) =
-    elemIndex 0 grid == Nothing &&
+    noBlanks &&
       rowsSatisfy config &&
       columnsSatisfy config &&
       boxesSatisfy config
+  where
+    noBlanks = elemIndex 0 grid == Nothing
 
 rowsSatisfy :: SudokuConfig -> Bool
 rowsSatisfy config = and $ map nonupleIsGoal (allRows config)
@@ -60,13 +66,22 @@ nonupleIsGoal xs | length xs == 9 = sum xs == sum [1..9]
 --   where
 --     allNonuples = (allRows config) ++ (allColumns config) ++ (allBoxes config)
 
-validIndex :: SudokuConfig -> Int -> Bool
-validIndex config index =
-    and $ map validNonuple [
-      indexRow config index,
-      indexColumn config index,
-      indexBox config index
-    ]
+validValuesForCell :: SudokuConfig -> Int -> [Int]
+validValuesForCell config index =
+    Set.toList (possibleValues `Set.difference` (Set.unions [row, col, box]))
+  where
+    row = Set.fromList $ indexRow config index
+    col = Set.fromList $ indexColumn config index
+    box = Set.fromList $ indexBox config index
+    possibleValues = Set.fromList [1..9]
+
+-- validIndex :: SudokuConfig -> Int -> Bool
+-- validIndex config index =
+--     and $ map validNonuple [
+--       indexRow config index,
+--       indexColumn config index,
+--       indexBox config index
+--     ]
 
 validNonuple :: [Int] -> Bool
 validNonuple xs | length xs == 9 = length (nub nonBlankCells) == length nonBlankCells
