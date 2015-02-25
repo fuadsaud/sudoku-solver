@@ -18,20 +18,18 @@ instance Show SudokuConfig where
                             | otherwise = intToDigit cell
 
 instance Config SudokuConfig where
-    successors = scs
+    successors = config@(SudokuConfig grid) = fillCell nextBlankCell
+      where
+        nextBlankCell = elemIndex 0 grid
+        fillCell Nothing      = []
+        fillCell (Just index) =
+          [
+            let
+              (ini, rest) = splitAt index grid
+              newConfig = SudokuConfig (ini ++ (newValue:(tail rest)))
+            in
+              newConfig | newValue <- validValuesForCell config index ]
 
-scs :: SudokuConfig ->  [SudokuConfig]
-scs config@(SudokuConfig grid) =
-  [
-    let
-      (ini, rest) = splitAt i grid
-      newConfig = SudokuConfig (ini ++ (newValue:(tail rest)))
-    in
-      newConfig | i <- blankIndices,  newValue <- validValuesForCell config i ]
-    where
-      blankIndices = elemIndices 0 grid
-
-sudokuConfigFromList :: [Integer] -> SudokuConfig
 sudokuConfigFromList grid = SudokuConfig (map fromIntegral grid)
 
 listFromSudokuConfig :: SudokuConfig -> [Int]
@@ -88,9 +86,6 @@ validNonuple xs | length xs == 9 = length (nub nonBlankCells) == length nonBlank
   where
     nonBlankCells = (filter (/= 0) xs)
 
-row :: SudokuConfig -> Int -> [Int]
-row (SudokuConfig grid) r | r >= 0 && r <= 9 = take 9 (drop (r * 9) grid)
-
 column :: SudokuConfig -> Int -> [Int]
 column config c | c >= 0 && c <= 9 = (allColumns config) !! c
 
@@ -99,6 +94,8 @@ column config c | c >= 0 && c <= 9 = (allColumns config) !! c
 
 indexRow ::SudokuConfig -> Int -> [Int]
 indexRow config i | i >= 0 && i < 9 * 9 = row config (i `div` 9)
+  where
+    row (SudokuConfig grid) r | r >= 0 && r <= 9 = take 9 (drop (r * 9) grid)
 
 indexColumn :: SudokuConfig -> Int -> [Int]
 indexColumn config i | i >= 0 && i <= 9 * 9 = column config (i `rem` 9)
