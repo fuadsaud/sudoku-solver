@@ -59,11 +59,6 @@ boxesSatisfy config = and $ map nonupleIsGoal (allBoxes config)
 nonupleIsGoal :: [Int] -> Bool
 nonupleIsGoal xs | length xs == 9 = sum xs == sum [1..9]
 
--- validConfig :: SudokuConfig -> Bool
--- validConfig config = and $ map validNonuple allNonuples
---   where
---     allNonuples = (allRows config) ++ (allColumns config) ++ (allBoxes config)
-
 validValuesForCell :: SudokuConfig -> Int -> [Int]
 validValuesForCell config index =
     Set.toList (possibleValues `Set.difference` (Set.unions [row, col, box]))
@@ -73,24 +68,10 @@ validValuesForCell config index =
     box = Set.fromList $ indexBox config index
     possibleValues = Set.fromList [1..9]
 
--- validIndex :: SudokuConfig -> Int -> Bool
--- validIndex config index =
---     and $ map validNonuple [
---       indexRow config index,
---       indexColumn config index,
---       indexBox config index
---     ]
-
 validNonuple :: [Int] -> Bool
 validNonuple xs | length xs == 9 = length (nub nonBlankCells) == length nonBlankCells
   where
     nonBlankCells = (filter (/= 0) xs)
-
-column :: SudokuConfig -> Int -> [Int]
-column config c | c >= 0 && c <= 9 = (allColumns config) !! c
-
--- box :: SudokuConfig -> Int -> [Int]
--- box config s | s >= 0  && s <= 9 = (allBoxes config) !! s
 
 indexRow ::SudokuConfig -> Int -> [Int]
 indexRow config i | i >= 0 && i < 9 * 9 = row config (i `div` 9)
@@ -99,11 +80,13 @@ indexRow config i | i >= 0 && i < 9 * 9 = row config (i `div` 9)
 
 indexColumn :: SudokuConfig -> Int -> [Int]
 indexColumn config i | i >= 0 && i <= 9 * 9 = column config (i `rem` 9)
+  where
+    column config c | c >= 0 && c <= 9 = (allColumns config) !! c
 
 indexBox :: SudokuConfig -> Int -> [Int]
-indexBox (SudokuConfig grid) i | i >= 0 && i <= 9 * 9 = boxAt (point i)
+indexBox (SudokuConfig grid) i | i >= 0 && i <= 9 * 9 = box (point i)
   where
-    boxAt (i, j) = [ grid !! (index (ii + offset i, jj + offset j)) | jj <- [0..2], ii <- [0..2] ]
+    box (i, j) = [ grid !! (index (ii + offset i, jj + offset j)) | jj <- [0..2], ii <- [0..2] ]
     offset idx = 3 * (idx `div` 3)
     point index = (index - 9 * (index `div` 9), index `div` 9)
     index (i, j) = i + j * 9
