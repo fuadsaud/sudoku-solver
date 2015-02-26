@@ -2,7 +2,7 @@ module SudokuSolve where
 
 import Solver
 import Data.Char (intToDigit)
-import Data.List (nub,transpose,elemIndex,elemIndices)
+import Data.List (nub,transpose,elemIndex)
 import Data.Set (Set)
 import qualified Data.Set as Set
 
