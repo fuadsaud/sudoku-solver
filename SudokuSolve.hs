@@ -9,7 +9,7 @@ import qualified Data.Set as Set
 data SudokuConfig = SudokuConfig [Int] deriving Eq
 
 instance Show SudokuConfig where
-    show (SudokuConfig grid) = concat [ row ++ "\n" | row <- rows ]
+    show (SudokuConfig grid) = concat ("\n":[ row ++ "\n" | row <- rows ])
       where
         rows = [ formattedRow row | row <- partition 9 cells ]
         formattedRow r = concat [ (concat triple) ++ " " | triple <- partition 3 r ]
