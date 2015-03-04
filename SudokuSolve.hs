@@ -2,7 +2,7 @@ module SudokuSolve where
 
 import Solver
 import Data.Char (intToDigit)
-import Data.List (nub,transpose,elemIndex,sort,(\\))
+import Data.List (nub,transpose,elemIndex,sort,union,(\\))
 
 data SudokuConfig = SudokuConfig [Int] deriving Eq
 
@@ -60,7 +60,7 @@ validValuesForCell config index = possibleValues \\ invalidValues
     col = indexColumn config index
     box = indexBox config index
     possibleValues = [1..9]
-    invalidValues  = nub (concat [row, col, box])
+    invalidValues  = row `union` col `union` box
 
 validNonuple :: [Int] -> Bool
 validNonuple xs | length xs == 9 = length (nub nonBlankCells) == length nonBlankCells
