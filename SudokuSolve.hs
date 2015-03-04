@@ -18,9 +18,8 @@ instance Show SudokuConfig where
                             | otherwise = intToDigit cell
 
 instance Config SudokuConfig where
-    successors config@(SudokuConfig grid) = fillCell nextBlankCell
+    successors config@(SudokuConfig grid) = fillCell (nextBlankCell config)
       where
-        nextBlankCell = elemIndex 0 grid
         fillCell Nothing      = []
         fillCell (Just index) =
           [
@@ -30,31 +29,22 @@ instance Config SudokuConfig where
             in
               newConfig | newValue <- validValuesForCell config index ]
 
-sudokuConfigFromList grid = SudokuConfig (map fromIntegral grid)
+sudokuConfigFromList :: Integral a => [a] -> SudokuConfig
+sudokuConfigFromList = SudokuConfig . map fromIntegral
 
 listFromSudokuConfig :: SudokuConfig -> [Int]
 listFromSudokuConfig (SudokuConfig grid) = grid
 
 sudokuSolve :: SudokuConfig -> (Maybe SudokuConfig)
-sudokuSolve config = solve isSudokuGoal config
+sudokuSolve = solve isSudokuGoal
 
 isSudokuGoal :: SudokuConfig -> Bool
-isSudokuGoal config@(SudokuConfig grid) =
-    noBlanks &&
-      rowsSatisfy config &&
-      columnsSatisfy config &&
-      boxesSatisfy config
+isSudokuGoal config = noBlanks && rowsSatisfy && columnsSatisfy && boxesSatisfy
   where
-    noBlanks = elemIndex 0 grid == Nothing
-
-rowsSatisfy :: SudokuConfig -> Bool
-rowsSatisfy config = and $ map nonupleIsGoal (allRows config)
-
-columnsSatisfy :: SudokuConfig -> Bool
-columnsSatisfy config = and $ map nonupleIsGoal (allColumns config)
-
-boxesSatisfy :: SudokuConfig -> Bool
-boxesSatisfy config = and $ map nonupleIsGoal (allBoxes config)
+    noBlanks       = nextBlankCell config == Nothing
+    rowsSatisfy    = and . map nonupleIsGoal . allRows    $ config
+    columnsSatisfy = and . map nonupleIsGoal . allColumns $ config
+    boxesSatisfy   = and . map nonupleIsGoal . allBoxes   $ config
 
 nonupleIsGoal :: [Int] -> Bool
 nonupleIsGoal xs | length xs == 9 = sum xs == sum [1..9]
@@ -95,13 +85,18 @@ allRows :: SudokuConfig -> [[Int]]
 allRows (SudokuConfig grid) = partition 9 grid
 
 allColumns :: SudokuConfig -> [[Int]]
-allColumns config = transpose $ allRows config
+allColumns = (transpose . allRows)
 
 allBoxes :: SudokuConfig -> [[Int]]
-allBoxes config =
-    map concat (concatMap (partition 3) (transpose (map (partition 3) (allRows config))))
+allBoxes = map concat . concatMap makeTriples . transpose . map makeTriples . allRows
+  where
+    makeTriples = partition 3
+
+nextBlankCell :: SudokuConfig -> (Maybe Int)
+nextBlankCell (SudokuConfig grid) = elemIndex 0 grid
 
 partition :: Int -> [a] -> [[a]]
 partition 0 xs = []
 partition n [] = []
-partition n xs = y:(partition n ys) where (y, ys) = splitAt n xs
+partition n xs = y:(partition n ys)
+  where (y, ys) = splitAt n xs
