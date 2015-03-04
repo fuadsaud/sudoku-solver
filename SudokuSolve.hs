@@ -16,10 +16,11 @@ instance Show SudokuConfig where
                             | otherwise = intToDigit cell
 
 instance Config SudokuConfig where
-    successors config@(SudokuConfig grid) = fillCell (nextBlankCell config)
+    successors config@(SudokuConfig grid) = case nextBlankCell config of
+        Nothing    -> []
+        Just index -> fillCell index
       where
-        fillCell Nothing      = []
-        fillCell (Just index) =
+        fillCell index =
           [
             let
               (ini, rest) = splitAt index grid
