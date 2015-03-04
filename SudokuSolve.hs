@@ -2,7 +2,7 @@ module SudokuSolve where
 
 import Solver
 import Data.Char (intToDigit)
-import Data.List (nub,transpose,elemIndex,(\\))
+import Data.List (nub,transpose,elemIndex,sort,(\\))
 
 data SudokuConfig = SudokuConfig [Int] deriving Eq
 
@@ -45,7 +45,8 @@ isSudokuGoal config = noBlanks && rowsSatisfy && columnsSatisfy && boxesSatisfy
     boxesSatisfy   = and . map nonupleIsGoal . allBoxes   $ config
 
 nonupleIsGoal :: [Int] -> Bool
-nonupleIsGoal xs | length xs == 9 = sum xs == sum [1..9]
+nonupleIsGoal xs
+              | length xs == 9 = sort xs == [1..9]
 
 validValuesForCell :: SudokuConfig -> Int -> [Int]
 validValuesForCell config index = possibleValues \\ invalidValues
