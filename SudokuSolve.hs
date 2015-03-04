@@ -2,9 +2,7 @@ module SudokuSolve where
 
 import Solver
 import Data.Char (intToDigit)
-import Data.List (nub,transpose,elemIndex)
-import Data.Set (Set)
-import qualified Data.Set as Set
+import Data.List (nub,transpose,elemIndex,(\\))
 
 data SudokuConfig = SudokuConfig [Int] deriving Eq
 
@@ -50,13 +48,13 @@ nonupleIsGoal :: [Int] -> Bool
 nonupleIsGoal xs | length xs == 9 = sum xs == sum [1..9]
 
 validValuesForCell :: SudokuConfig -> Int -> [Int]
-validValuesForCell config index =
-    Set.toList (possibleValues `Set.difference` (Set.unions [row, col, box]))
+validValuesForCell config index = possibleValues \\ invalidValues
   where
-    row = Set.fromList $ indexRow config index
-    col = Set.fromList $ indexColumn config index
-    box = Set.fromList $ indexBox config index
-    possibleValues = Set.fromList [1..9]
+    row = indexRow config index
+    col = indexColumn config index
+    box = indexBox config index
+    possibleValues = [1..9]
+    invalidValues  = nub (concat [row, col, box])
 
 validNonuple :: [Int] -> Bool
 validNonuple xs | length xs == 9 = length (nub nonBlankCells) == length nonBlankCells
