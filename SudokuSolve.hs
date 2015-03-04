@@ -28,7 +28,12 @@ instance Config SudokuConfig where
               newConfig | newValue <- validValuesForCell config index ]
 
 sudokuConfigFromList :: Integral a => [a] -> SudokuConfig
-sudokuConfigFromList = SudokuConfig . map fromIntegral
+sudokuConfigFromList grid =
+    if validConfig config
+      then config
+      else error "invalid board"
+  where
+    config = SudokuConfig $ map fromIntegral grid
 
 listFromSudokuConfig :: SudokuConfig -> [Int]
 listFromSudokuConfig (SudokuConfig grid) = grid
@@ -61,6 +66,9 @@ validNonuple :: [Int] -> Bool
 validNonuple xs | length xs == 9 = length (nub nonBlankCells) == length nonBlankCells
   where
     nonBlankCells = (filter (/= 0) xs)
+
+validConfig :: SudokuConfig -> Bool
+validConfig config = all validNonuple $ concat [allRows config, allColumns config, allBoxes config]
 
 indexRow ::SudokuConfig -> Int -> [Int]
 indexRow config i | i >= 0 && i < 9 * 9 = row config (i `div` 9)
