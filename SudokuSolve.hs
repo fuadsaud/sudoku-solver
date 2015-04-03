@@ -16,7 +16,8 @@ instance Show SudokuConfig where
                             | otherwise = intToDigit cell
 
 instance Config SudokuConfig where
-    successors config@(SudokuConfig grid) = case nextBlankCell config of
+    successors config@(SudokuConfig grid) =
+      case nextBlankCell config of
         Nothing    -> []
         Just index -> fillCell index
       where
